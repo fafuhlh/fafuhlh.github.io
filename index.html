@@ -1,0 +1,363 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>
+    Intro to MapView - Create a 2D map | Sample | ArcGIS API for JavaScript
+    4.23
+  </title>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    #container {
+      height: calc(100% - 40px);
+    }
+
+
+    #basemapGalleryDiv {
+      right: 5px;
+      top: 5px;
+    }
+
+    /* body
+             body{
+                position:relative;
+            } */
+
+    #top {
+      box-sizing: border-box;
+      height: 40px;
+      width: 100%;
+      background-color: rgba(240, 248, 255, 0.5);
+      color: black;
+      padding-left: 40px;
+      box-sizing: border-box;
+    }
+
+    .top b {
+      line-height: 40px;
+      font-size: 20px;
+    }
+
+    .top i {
+      line-height: 40px;
+      font-size: 10px;
+    }
+  </style>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.23/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.23/"></script>
+
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/FeatureLayer",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/Legend",
+      "esri/widgets/ScaleBar",
+      "esri/widgets/Search",
+      "esri/widgets/LayerList",
+      "esri/widgets/Home",
+      "esri/widgets/Measurement",
+      "esri/widgets/Compass",
+      "esri/widgets/Bookmarks",
+      "esri/widgets/Expand",
+      "esri/tasks/FindTask",
+      "esri/widgets/Editor",
+      "esri/popup/content/AttachmentsContent",
+      "esri/widgets/Print",
+      "esri/widgets/Track",
+      "esri/popup/content/TextContent",
+      "esri/renderers/HeatmapRenderer",
+
+    ], (
+      Map,
+      MapView,
+      FeatureLayer,
+      BasemapGallery,
+      Legend,
+      ScaleBar,
+      Search,
+      LayerList,
+      Home,
+      Measurement,
+      Compass,
+      Bookmarks,
+      Expand,
+      FindTask,
+      Editor,
+      Print,
+      Track,
+      AttachmentsContent,
+      TextContent,
+      HeatmapRenderer
+
+    ) => {
+      let features, editor;
+      //图层
+      const layer = new FeatureLayer({
+        // URL to the service
+        url: "https://www.geosceneonline.cn/server/rest/services/Hosted/hospital_site__zj/FeatureServer",
+        title: '北京医院分布'
+      });
+
+      const layer1 = new FeatureLayer({
+        // URL to the service
+        url: "https://www.geosceneonline.cn/server/rest/services/Hosted/%E5%8C%97%E4%BA%AC%E6%99%AF%E7%82%B9/FeatureServer/0",
+        title: '北京著名旅游景点'
+      });
+
+      const layer2 = new FeatureLayer({
+        // URL to the service
+        url: "https://www.geosceneonline.cn/server/rest/services/Hosted/%E5%8C%97%E4%BA%AC%E4%BA%8B%E4%BB%B6/FeatureServer/0",
+        title: '北京事件'
+      });
+
+      const layer3 = new FeatureLayer({
+        // URL to the service
+        url: "https://www.geosceneonline.cn/server/rest/services/Hosted/%E8%BD%A8%E9%81%93%E4%BA%A4%E9%80%9A%E7%BA%BF%E8%B7%AF/FeatureServer/0",
+        title: '北京轨道分布',
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-line",
+            width: 3, // 设置线条宽度为3
+            color: [0, 255, 0, 1] // 设置颜色
+          }
+        }
+      });
+
+      //map
+      const map = new Map({
+        basemap: "topo"
+      });
+
+      //map.layers.add(layer);
+      map.addMany([layer, layer1, layer2, layer3]);
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        zoom: 11,
+        center: [116.38, 39.9] // longitude, latitude
+      });
+
+      //left
+      //图层列表
+      let layerList = new LayerList({
+        view: view
+      });
+
+      const llExpand = new Expand({
+        view: view,
+        content: layerList,
+        expanded: false
+      });
+      view.ui.add(llExpand, "top-left");
+
+      //指南针
+      let compass = new Compass({
+        view: view
+      });
+      // adds the compass to the top left corner of the MapView
+      view.ui.add(compass, "bottom-left");
+
+      //图例
+      let legend = new Legend(
+        {
+          view: view,
+          style: "card",
+        },
+        "legend"
+      );
+      const lgExpand = new Expand({
+        view: view,
+        content: legend,
+        expanded: false
+      });
+      view.ui.add(lgExpand, "top-left");
+
+      //比例尺
+      let scaleBar = new ScaleBar({
+        view: view,
+        style: "ruler",
+        unit: "metric"
+      });
+      //Add widget to the bottom left corner of the view
+      view.ui.add(scaleBar, {
+        position: "bottom-left"
+      });
+
+      //right
+
+      //查询
+      const searchWidget = new Search({
+        view: view
+      });
+      // Adds the search widget below other elements in
+      // the top left corner of the view
+      view.ui.add(searchWidget, {
+        position: "top-right",
+        index: 2
+      });
+
+      //home键
+      let homeWidget = new Home({
+        view: view
+      });
+      // adds the home widget to the top left corner of the MapView
+      view.ui.add(homeWidget, "top-right");
+
+      //底图库
+      let basemapGallery = new BasemapGallery(
+        {
+          view: view
+        },
+        "basemapGallery"
+      );
+      basemapGallery.startup;
+      // Add widget to the top right corner of the view
+
+      const bgExpand = new Expand({
+        view: view,
+        content: basemapGallery,
+        expanded: false
+      });
+
+      // Add the widget to the top-right corner of the view
+      view.ui.add(bgExpand, "top-right");
+
+      //测量
+      const measurement = new Measurement({
+        view: view,
+        activeTool: "distance"
+      });
+
+      const measureExpand = new Expand({
+        view: view,
+        content: measurement,
+        expanded: false
+      });
+
+      view.ui.add(measureExpand, "top-right");
+
+      //书签
+      const bookmarks = new Bookmarks({
+        view: view,
+        // allows bookmarks to be added, edited, or deleted
+        editingEnabled: true
+      });
+      const bkExpand = new Expand({
+        view: view,
+        content: bookmarks,
+        expanded: false
+      });
+      view.ui.add(bkExpand, "top-right");
+
+      //Track
+      let track = new Track({
+        view: view
+      });
+      const trExpand = new Expand({
+        view: view,
+        content: track,
+        expanded: false
+      });
+      view.ui.add(trExpand, "top-right");
+
+      //移动坐标设置
+      var coordsWidget = document.createElement("div");
+      coordsWidget.id = "coordsWidget";
+      coordsWidget.className = "esri-widget esri-component";
+      coordsWidget.style.padding = "7px 15px 5px";
+
+      view.ui.add(coordsWidget, "bottom-right");
+      function showCoordinates(pt) {
+        var coords = "Lat/Lon" + pt.latitude.toFixed(3) + " " + pt.longitude.toFixed(3) +
+          " | Scale 1:" + Math.round(view.scale * 1) / 1 +
+          " | Zoom " + view.zoom;
+        coordsWidget.innerHTML = coords;
+      }
+
+      view.watch("stationary", function (isStationary) {
+        showCoordinates(view.center);
+      });
+
+      view.on("pointer-move", function (evt) {
+        showCoordinates(view.toMap({ x: evt.x, y: evt.y }));
+      });
+
+      //print
+      const print = new Print({
+        view: view,
+        // specify your own print service
+        printServiceUrl:
+          "https://utility.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task"
+      });
+
+
+      function createHeatMap() {
+
+        const diffLayer = map.layers.find((layer) => layer.title === '北京医院分布热力图')
+        console.log(diffLayer)
+        if(diffLayer){
+          map.remove(diffLayer)
+          console.log('已经生成了')
+          return;
+        }
+        // Create a heatmap renderer
+        const heatLayer = new FeatureLayer({
+          // URL to the service
+          url: "https://www.geosceneonline.cn/server/rest/services/Hosted/hospital_site__zj/FeatureServer",
+          title: '北京医院分布热力图'
+        });
+        console.log()
+        const heatmapRenderer = new HeatmapRenderer({
+          blurRadius: 20,
+          maxPixelIntensity: 200,
+          minPixelIntensity: 0
+        });
+
+        // Set the renderer to the feature layer
+        heatLayer.renderer = heatmapRenderer;
+        map.add(heatLayer)
+      }
+
+      const heatmapBtn = document.getElementById('heatmap')
+      // console.log(heatmapBtn)
+      heatmapBtn.addEventListener('click', () => {
+        createHeatMap()
+      })
+
+
+    });
+  </script>
+</head>
+
+<body>
+  <div id="basemapGalleryDiv"></div>
+  <div class="top">
+    <b>北京市综合服务平台</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <i>关于北京市的衣食住行</i>
+    <button id="heatmap" style="width: 60px;height: 30px ;background-color: pink;">热力图</button>
+    <div id="searchdiv"></div>
+  </div>
+  <div id="container">
+    <div id="viewDiv"></div>
+  </div>
+
+  <div id="other"></div>
+  <div id="final"></div>
+</body>
+
+</html>
